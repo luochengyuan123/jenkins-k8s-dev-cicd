@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: polling-server
-  namespace: default
+  namespace: kube-ops
   labels:
     app: polling-server
 spec:
@@ -44,7 +44,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: polling-server
-  namespace: default
+  namespace: kube-ops
 spec:
   selector:
     app: polling-server
@@ -59,7 +59,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: mysql
-  namespace: default
+  namespace: kube-ops
 spec:
   template:
     metadata:
@@ -96,7 +96,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: mysql
-  namespace: default
+  namespace: kube-ops
 spec:
   selector:
     app: mysql

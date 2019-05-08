@@ -7,7 +7,7 @@ RUN mvn -f /usr/app/pom.xml clean package -Dmaven.test.skip=true
 
 FROM openjdk:8-jdk-alpine
 
-MAINTAINER cnych <icnych@gmail.com>
+MAINTAINER oliver <luochengyuan123@gmail.com>
 
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
