@@ -1,35 +1,39 @@
-// 测试环境Jenkinsfile
-def registryUrl = "harbor.haimaxy.com"
-def registryCredential = "harbor"
+def label = "slave-${UUID.randomUUID().toString()}"
 
-def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
-def jobName = env.JOB_NAME.trim()
-def gitBranch = params.BRANCH.trim()
-def gitUrl = "https://github.com/luochengyuan123/${env.JOB_NAME.substring(2, env.JOB_NAME.length())}.git"
-def gitCredential = "gitlabjenkins"
-def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-def imageEndpoint = "payeco/${projectName}"
-def image = "${registryUrl}/${imageEndpoint}"
+podTemplate(label: label, containers: [
+  containerTemplate(name: 'maven', image: 'maven:3.6-alpine', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'kubectl', image: 'cnych/kubectl', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'helm', image: 'cnych/helm', command: 'cat', ttyEnabled: true)
+], volumes: [
+  hostPathVolume(mountPath: '/root/.m2', hostPath: '/var/run/m2'),
+  hostPathVolume(mountPath: '/home/jenkins/.kube', hostPath: '/root/.kube'),
+  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+]) {
+  node(label) {
+    def myRepo = checkout scm
+    def gitCommit = myRepo.GIT_COMMIT
+    def gitBranch = myRepo.GIT_BRANCH
 
-
-node('jenkins-jnlp') {
     stage('单元测试') {
       echo "测试阶段"
     }
     stage('代码编译打包') {
-      
+      container('maven') {
         echo "代码编译打包阶段"
-      
+      }
     }
     stage('构建 Docker 镜像') {
-      
+      container('docker') {
         echo "构建 Docker 镜像阶段"
-      
+      }
     }
     stage('运行 Kubectl') {
-      
+      container('kubectl') {
         echo "查看 K8S 集群 Pod 列表"
         sh "kubectl get pods"
-      
+      }
     }
+   
+  }
 }
