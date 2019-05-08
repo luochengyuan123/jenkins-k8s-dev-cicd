@@ -4,7 +4,6 @@ podTemplate(label: label, containers: [
   containerTemplate(name: 'maven', image: 'maven:3.6-alpine', command: 'cat', ttyEnabled: true),
   containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
   containerTemplate(name: 'kubectl', image: 'cnych/kubectl', command: 'cat', ttyEnabled: true),
-  containerTemplate(name: 'helm', image: 'cnych/helm', command: 'cat', ttyEnabled: true)
 ], volumes: [
   hostPathVolume(mountPath: '/root/.m2', hostPath: '/var/run/m2'),
   hostPathVolume(mountPath: '/home/jenkins/.kube', hostPath: '/root/.kube'),
@@ -14,25 +13,54 @@ podTemplate(label: label, containers: [
     def myRepo = checkout scm
     def gitCommit = myRepo.GIT_COMMIT
     def gitBranch = myRepo.GIT_BRANCH
+    
+
+    def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+    def dockerRegistryUrl = "harbor.haimaxy.com"
+    def imageEndpoint = "payeco/polling-app-server"
+    def image = "${dockerRegistryUrl}/${imageEndpoint}"
 
     stage('单元测试') {
       echo "测试阶段"
     }
     stage('代码编译打包') {
-      container('maven') {
-        echo "代码编译打包阶段"
-      }
+      try {
+         container('maven') {
+           echo "2. 代码编译打包阶段"
+           sh "mvn clean package -Dmaven.test.skip=true"
+         }
+       } catch (exc) {
+         println "构建失败 - ${currentBuild.fullDisplayName}"
+         throw(exc)
+       }
     }
     stage('构建 Docker 镜像') {
-      container('docker') {
-        echo "构建 Docker 镜像阶段"
-      }
+       container('构建 Docker 镜像') {
+         withCredentials([[$class: 'UsernamePasswordMultiBinding',
+           credentialsId: 'harbor',
+           usernameVariable: 'DOCKER_HUB_USER',
+           passwordVariable: 'DOCKER_HUB_PASSWORD']]) {
+             container('docker') {
+               echo "3. 构建 Docker 镜像阶段"
+               sh """
+                 docker login ${dockerRegistryUrl} -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
+                 docker build -t ${image}:${imageTag} .
+                 docker push ${image}:${imageTag}
+                 """
+             }
+           }
+         }
     }
     stage('运行 Kubectl') {
-      container('kubectl') {
-        echo "查看 K8S 集群 Pod 列表"
-        sh "kubectl get pods"
-      }
+       container('kubectl') {
+          echo "查看 K8S 集群 Pod 列表"
+          sh "kubectl get pods"
+          sh """
+            sed -i "s/<IMAGE>/${image}" k8s.yaml
+            sed -i "s/<IMAGE_TAG>/${imageTag}" k8s.yaml
+            kubectl apply -f k8s.yaml
+          """
+        }
     }
    
   }
