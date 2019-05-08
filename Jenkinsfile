@@ -24,30 +24,23 @@ def image = "${registryUrl}/${imageEndpoint}"
 
 
 node('jenkins-jnlp') {
-    stage('Prepare') {
-        echo "1.Prepare Stage"
+    stage('单元测试') {
+      echo "测试阶段"
     }
-    stage('Test') {
-      echo "2.Test Stage"
-      echo "${projectName}"
-      echo "${gitBranch}"
+    stage('代码编译打包') {
+      
+        echo "代码编译打包阶段"
+      
     }
-    stage('Build & Push Image') {
-        echo "4.Push Docker Image Stage"
-        dir("/home/jenkins/workspace/${jobName}") {
-           docker.withRegistry("https://${registryUrl}", "${registryCredential}") {
-                def images = docker.build("${image}:${imageTag}", ".")
-                images.push()
-            }
-        }
+    stage('构建 Docker 镜像') {
+      
+        echo "构建 Docker 镜像阶段"
+      
     }
-    stage('Deploy to k8s') {
-        echo "5. Deploy Stage"
-        if (env.BRANCH_NAME == 'master') {
-            input "确认要部署线上环境吗？"
-        }
-        sh "sed -i 's/<IMAGE>/${image}/' k8s.yaml"
-        sh "sed -i 's/<IMAGE_TAG>/${imageTag}/' k8s.yaml"
-        sh "kubectl apply -f k8s.yaml --record"
+    stage('运行 Kubectl') {
+      
+        echo "查看 K8S 集群 Pod 列表"
+        sh "kubectl get pods"
+      
     }
 }
