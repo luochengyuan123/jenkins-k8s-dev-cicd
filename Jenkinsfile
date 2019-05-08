@@ -24,18 +24,8 @@ def image = "${registryUrl}/${imageEndpoint}"
 
 
 node('jenkins-jnlp') {
-    def mvnHome
     stage('Prepare') {
         echo "1.Prepare Stage"
-        git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
-        mvnHome = tool 'M3'
-        script {
-            if (${gitBranch} != 'master') {
-                imageTag = "${gitBranch}-${imageTag}"
-            }
-            sh "'${mvnHome}/bin/mvn' clean package -Dmaven.test.skip=true"
-            archive 'target/*.jar'
-        }
     }
     stage('Test') {
       echo "2.Test Stage"
