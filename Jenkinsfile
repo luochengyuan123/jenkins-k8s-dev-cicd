@@ -17,7 +17,8 @@ podTemplate(label: label, containers: [
 
     def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     def dockerRegistryUrl = "harbor.haimaxy.com"
-    def imageEndpoint = "payeco/polling-app-server"
+    def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
+    def imageEndpoint = "payeco/${projectName}"
     def image = "${dockerRegistryUrl}/${imageEndpoint}"
 
     stage('单元测试') {
@@ -56,6 +57,7 @@ podTemplate(label: label, containers: [
           echo "查看 K8S 集群 Pod 列表"
           sh "kubectl get pods"
           sh """
+            sed -i "s/<IMAGE>/${image}/" k8s.yaml
             sed -i "s/<IMAGE_TAG>/${imageTag}/" k8s.yaml
             kubectl apply -f k8s.yaml
           """
