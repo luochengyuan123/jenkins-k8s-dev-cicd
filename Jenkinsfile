@@ -11,10 +11,11 @@ podTemplate(label: label, containers: [
 ]) {
   node(label) {
     
+    def myRepo = checkout scm
+    def gitCommit = myRepo.GIT_COMMIT
+    def gitBranch = myRepo.GIT_BRANCH
+    
     def projectName = env.JOB_NAME.substring(2, env.JOB_NAME.length())
-    def gitUrl = "https://github.com/luochengyuan123/${projectName}.git"
-    def gitCredential = "gitlabjenkins"
-    def gitBranch = params.BRANCH.trim()
     def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     def dockerRegistryUrl = "harbor.haimaxy.com"
     def imageEndpoint = "payeco/${projectName}"
@@ -27,7 +28,6 @@ podTemplate(label: label, containers: [
       try {
          container('maven') {
            echo "2. 代码编译打包阶段"
-           git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
            sh "mvn clean package -Dmaven.test.skip=true"
          }
        } catch (exc) {
