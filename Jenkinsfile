@@ -22,12 +22,12 @@ podTemplate(label: label, containers: [
 
     stage('准备code') {
       echo "准备阶段"
-      git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
     }
     stage('代码编译打包') {
       try {
          container('maven') {
            echo "2. 代码编译打包阶段"
+           git branch: gitBranch, credentialsId: gitCredential, url: gitUrl
            sh "mvn clean package -Dmaven.test.skip=true"
          }
        } catch (exc) {
