@@ -23,13 +23,13 @@ podTemplate(label: label, containers: [
 
     stage('准备code') {
       echo "准备阶段"
-      sh "git clone https://github.com/luochengyuan123/polling-app-server.git"
       
     }
     stage('代码编译打包') {
       try {
          container('maven') {
            echo "2. 代码编译打包阶段"
+           sh "git clone https://github.com/luochengyuan123/polling-app-server.git"
            sh "mvn clean package -Dmaven.test.skip=true"
          }
        } catch (exc) {
